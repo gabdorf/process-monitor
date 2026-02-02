@@ -14,7 +14,14 @@ struct ProcessMonitorApp: App {
                         Image(systemName: health.isHealthy ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundColor(health.isHealthy ? .green : .red)
                         VStack(alignment: .leading) {
-                            Text(health.config.displayName)
+                            HStack {
+                                Text(health.config.displayName)
+                                if let schedule = health.schedule {
+                                    Text("(\(schedule.description))")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
                             Text(health.lastRunDescription)
                                 .font(.caption)
                                 .foregroundColor(.secondary)

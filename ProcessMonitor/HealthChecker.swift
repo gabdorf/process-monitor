@@ -54,6 +54,38 @@ enum HealthChecker {
         return Date().timeIntervalSince(modDate)
     }
 
+    static func readSchedule(label: String) -> LaunchdSchedule? {
+        let searchPaths = [
+            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/LaunchAgents"),
+            URL(fileURLWithPath: "/Library/LaunchAgents"),
+            URL(fileURLWithPath: "/Library/LaunchDaemons"),
+        ]
+
+        for dir in searchPaths {
+            let plistURL = dir.appendingPathComponent("\(label).plist")
+            guard let data = try? Data(contentsOf: plistURL),
+                  let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
+                continue
+            }
+
+            if let seconds = plist["StartInterval"] as? Int {
+                return .interval(seconds: seconds)
+            }
+
+            if let cal = plist["StartCalendarInterval"] as? [String: Any] {
+                return .calendar(
+                    hour: cal["Hour"] as? Int,
+                    minute: cal["Minute"] as? Int,
+                    weekday: cal["Weekday"] as? Int
+                )
+            }
+
+            return nil
+        }
+
+        return nil
+    }
+
     static func check(config: ProcessConfig) async -> ProcessHealth {
         var health = ProcessHealth(config: config)
 
@@ -68,6 +100,8 @@ enum HealthChecker {
         if let logPath = config.logFilePath, !logPath.isEmpty {
             health.logAge = checkLogAge(path: logPath)
         }
+
+        health.schedule = readSchedule(label: config.launchdLabel)
 
         return health
     }

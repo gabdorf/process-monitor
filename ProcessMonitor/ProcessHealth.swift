@@ -1,5 +1,40 @@
 import Foundation
 
+enum LaunchdSchedule {
+    case interval(seconds: Int)
+    case calendar(hour: Int?, minute: Int?, weekday: Int?)
+
+    var description: String {
+        switch self {
+        case .interval(let seconds):
+            let minutes = seconds / 60
+            if minutes < 1 { return "every \(seconds)s" }
+            if minutes < 60 { return "every \(minutes) min" }
+            let hours = minutes / 60
+            let remainder = minutes % 60
+            if remainder == 0 {
+                return hours == 1 ? "every hour" : "every \(hours) hours"
+            }
+            return "every \(hours)h \(remainder)m"
+        case .calendar(let hour, let minute, let weekday):
+            let timeStr: String
+            if let h = hour, let m = minute {
+                timeStr = String(format: "%d:%02d", h, m)
+            } else if let h = hour {
+                timeStr = "\(h):00"
+            } else {
+                timeStr = "scheduled"
+            }
+            if let w = weekday {
+                let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                let day = (0...6).contains(w) ? days[w] : "day \(w)"
+                return "\(day) at \(timeStr)"
+            }
+            return "daily at \(timeStr)"
+        }
+    }
+}
+
 struct ProcessHealth: Identifiable {
     var id: String { config.launchdLabel }
     let config: ProcessConfig
@@ -7,6 +42,7 @@ struct ProcessHealth: Identifiable {
     var lastExitStatusZero: Bool = true
     var processRunning: Bool? = nil  // nil if processName not configured
     var logAge: TimeInterval? = nil  // nil if logFilePath not configured
+    var schedule: LaunchdSchedule? = nil
 
     var isHealthy: Bool {
         guard launchdLoaded, lastExitStatusZero else { return false }

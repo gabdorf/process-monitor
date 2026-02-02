@@ -52,6 +52,8 @@ Create a config file at `~/.config/process-monitor/config.json`:
 | `logFilePath` | No | Log file to check for recent activity |
 | `maxAgeMinutes` | No | Max minutes since last log write before alerting |
 
+The run schedule (e.g. "every 5 min", "daily at 9:00") is read automatically from the launchd plist file — no need to configure it manually.
+
 ## How It Works
 
 A process is considered **healthy** when all configured conditions are met:
